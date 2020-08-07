@@ -16,15 +16,42 @@ module.exports = function (app) {
   var convertHandler = new ConvertHandler();
 
   app.route('/api/convert')
-    .get(function (req, res){
-      var input = req.query.input;
-      var initNum = convertHandler.getNum(input);
-      var initUnit = convertHandler.getUnit(input);
-      var returnNum = convertHandler.convert(initNum, initUnit);
-      var returnUnit = convertHandler.getReturnUnit(initUnit);
-      var toString = convertHandler.getString(initNum, initUnit, returnNum, returnUnit);
+    .get(function (req, res,next){
+      const input = req.query.input;
+      console.log(req.query)
+      const initNum = convertHandler.getNum(input);
+      const initUnit = convertHandler.getUnit(input);    
+
+      res.body = {};
+      res.body.initNum = initNum;
+      res.body.initUnit = initUnit;
+
+      if (res.body.initNum !== 'invalid input' && res.body.initUnit !== 'invalid input') {
+        res.body.returnNum = convertHandler.convert(initNum, initUnit);
+        res.body.returnUnit = convertHandler.getReturnUnit(initUnit);
+        res.body.string = convertHandler.getString(initNum, initUnit, res.body.returnNum, res.body.returnUnit);
+      }
+      next();
+    }, function(req, res) {
+      let response;
       
-      //res.json
-    });
+      if (res.body.initNum === 'invalid input' && res.body.initUnit === 'invalid input') {
+        response = Object.assign({}, res.body, { string: 'invalid number and unit' }); 
+      } else if (res.body.initNum === 'invalid input') {
+        response = Object.assign({}, res.body, { string: 'ivalid number' });
+      } else if (res.body.initUnit === 'invalid input') {
+        response = Object.assign({}, res.body, { string: 'invalid unit' });
+      } else {
+        response = {
+          initNum: res.body.initNum,
+          initUnit: res.body.initUnit,
+          returnNum: res.body.returnNum,
+          returnUnit: res.body.returnUnit,
+          string: res.body.string
+        }
+      }
+      
+      res.status(200).json(response);
+    });  
     
 };
